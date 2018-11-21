@@ -1,15 +1,20 @@
 package com.map.map3d.onestep;
 
+import java.text.DecimalFormat;
 
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.location.Location;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.util.Log;
+
 
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.AMap.InfoWindowAdapter;
@@ -17,6 +22,7 @@ import com.amap.api.maps.AMap.OnInfoWindowClickListener;
 import com.amap.api.maps.AMap.OnMapClickListener;
 import com.amap.api.maps.AMap.OnMarkerClickListener;
 import com.amap.api.maps.CameraUpdateFactory;
+import com.amap.api.maps.LocationSource;
 import com.amap.api.maps.MapView;
 import com.amap.api.maps.model.BitmapDescriptor;
 import com.amap.api.maps.model.BitmapDescriptorFactory;
@@ -25,6 +31,8 @@ import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.LatLngBounds;
 import com.amap.api.maps.model.Marker;
 import com.amap.api.maps.model.MarkerOptions;
+import com.amap.api.maps.model.MyLocationStyle;
+import com.amap.api.maps.CameraUpdate;
 import com.amap.api.services.core.AMapException;
 import com.amap.api.services.core.LatLonPoint;
 import com.amap.api.services.core.PoiItem;
@@ -33,6 +41,7 @@ import com.amap.api.services.poisearch.PoiResult;
 import com.amap.api.services.poisearch.PoiSearch;
 import com.amap.api.services.poisearch.PoiSearch.OnPoiSearchListener;
 import com.amap.api.services.poisearch.PoiSearch.SearchBound;
+import com.map.map3d.onestep.util.Constants;
 import com.map.map3d.onestep.util.ToastUtil;
 
 
@@ -41,7 +50,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener ,
         OnMapClickListener, OnInfoWindowClickListener, InfoWindowAdapter, OnMarkerClickListener,
-        OnPoiSearchListener  {
+        OnPoiSearchListener, LocationSource.OnLocationChangedListener,AMap.OnMyLocationChangeListener {
 
     private MapView mapView;
     private AMap aMap;
@@ -49,7 +58,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private PoiResult poiResult; // poi返回的结果
     private int currentPage = 0;// 当前页面，从0开始计数
     private PoiSearch.Query query;// Poi查询条件类
-    private LatLonPoint lp = new LatLonPoint(39.993743, 116.472995);// 116.472995,39.993743
+    private LatLonPoint lp = new LatLonPoint(20.993743, 116.472995);//
     private Marker locationMarker; // 选择的点
     private Marker detailMarker;
     private Marker mlastMarker;
@@ -62,8 +71,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private String keyWord = "";
     private EditText mSearchText;
 
-    private Button start_trace;
 
+    private Button start_trace; //开始记录按钮
+    private int button_status = 0;
+    private Button review; //写评论按钮
+
+    private View cover;//点击开始记录后的覆盖蒙版
+
+
+    private List points = new ArrayList();//放入用户的行走点数据
+    private MarkerOptions markerOption; //用户点击评论时所在点的集合
+
+
+    private DecimalFormat df = new DecimalFormat("#.000000");
+    private MyLocationStyle myLocationStyle;
+    private double mLocationLatitude;
+    private double mLocationLongitude;
+    private boolean isFirst = true;
 
 
     @Override
@@ -77,6 +101,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
          * */
         //Demo中为了其他界面可以使用下载的离线地图，使用默认位置存储，屏蔽了自定义设置
         //  MapsInitializer.sdcardDir =OffLineMapUtils.getSdCacheDir(this);
+
 
         mapView = (MapView) findViewById(R.id.map);
         mapView.onCreate(savedInstanceState);// 此方法必须重写
@@ -103,6 +128,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             aMap.setOnMarkerClickListener(this);
             aMap.setOnInfoWindowClickListener(this);
             aMap.setInfoWindowAdapter(this);
+
             TextView searchButton = (TextView) findViewById(R.id.btn_search);
             searchButton.setOnClickListener(this);
             locationMarker = aMap.addMarker(new MarkerOptions()
@@ -112,20 +138,65 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     .position(new LatLng(lp.getLatitude(), lp.getLongitude())));
             locationMarker.showInfoWindow();
 
+
+
         }
 
-
         start_trace =(Button)findViewById(R.id.start_trace);
-        start_trace.setOnClickListener(this);
+        cover = (View)findViewById(R.id.cover);
+        review  =(Button)findViewById(R.id.review);
+        start_trace.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                start_trace.setText(getResources().getString(R.string.end_trace));
+                switch (button_status){
+                    case 0:
+                        start_trace.setBackgroundResource(R.drawable.end_trace);
+                        start_trace.setText(getResources().getString(R.string.end_trace));
+                        start_trace.setPadding(0,0,0,0);
+                        button_status = 1;
+                        cover.setVisibility(View.VISIBLE);
+                        cover.setAlpha(0.6f);
+                        review.setVisibility(View.VISIBLE);
+                        review.setPadding(0,0,0,0);
+
+                        break;
+                    case 1:
+                        start_trace.setText(getResources().getString(R.string.start_trace));
+                        start_trace.setBackgroundResource(R.drawable.start_trace);
+                        start_trace.setPadding(0,0,0,0);
+                        button_status = 0;
+                        cover.setVisibility(View.INVISIBLE);
+                        review.setVisibility(View.INVISIBLE);
+                        review.setPadding(0,0,0,0);
+
+                        break;
+
+                }
+
+
+            }
+        });
 
 
         setup();
-        aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lp.getLatitude(), lp.getLongitude()), 14));
+        aMap.setOnMyLocationChangeListener(this);
+        aMap.setMyLocationStyle(myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_FOLLOW));
+
 
 
     }
 
     private void setup() {
+
+
+        aMap.getUiSettings().setMyLocationButtonEnabled(false);// 设置默认定位按钮是否显示
+        myLocationStyle = new MyLocationStyle();
+        aMap.setMyLocationStyle(myLocationStyle);
+        aMap.setMyLocationEnabled(true);// 设置为true表示显示定位层并可触发定位，false表示隐藏定位层并不可触发定位，默认是false
+
+
         mPoiDetail = (RelativeLayout) findViewById(R.id.poi_detail);
         mPoiDetail.setOnClickListener(new View.OnClickListener() {
 
@@ -206,9 +277,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         switch (v.getId()){
-            case R.id.start_trace:
+            case R.id.btn_search:
+                doSearchQuery();
+                break;
 
-
+            default:
+                break;
         }
     }
 
@@ -390,6 +464,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mPoiName.setText(mCurrentPoi.getTitle());
         mPoiAddress.setText(mCurrentPoi.getSnippet()+mCurrentPoi.getDistance());
     }
+
+    @Override
+    public void onLocationChanged(Location location) {
+
+    }
+
+    @Override
+    public void onMyLocationChange(Location location) {
+        if(location != null) {
+            Bundle bundle = location.getExtras();
+            if (bundle != null) {
+                mLocationLatitude = location.getLatitude();
+                mLocationLongitude = location.getLongitude();
+                mLocationLatitude = Double.valueOf(df.format(mLocationLatitude));
+                mLocationLongitude = Double.valueOf(df.format(mLocationLongitude));
+
+                if (isFirst) {
+                    if (mLocationLatitude > 0 && mLocationLongitude > 0) {
+                        CameraUpdate cu = CameraUpdateFactory.newLatLngZoom(new LatLng(mLocationLatitude, mLocationLongitude), 17);
+                        aMap.moveCamera(cu);
+                    } else {
+                        CameraUpdate cu = CameraUpdateFactory.newLatLngZoom(Constants.CHENGDU, 17);
+                        aMap.moveCamera(cu);
+                    }
+                    isFirst = false;
+                }
+
+            }else {
+                    ToastUtil.show(this,"定位失败，请检查您的定位权限");
+                }
+
+            }
+        }
 
 
     private class myPoiOverlay {

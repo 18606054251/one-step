@@ -4,6 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent" >
@@ -15,9 +17,24 @@
     </RelativeLayout>
 
     <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+        <View
+            android:id="@+id/cover"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/dark_gray"
+            android:visibility="invisible"/>
+
+
+    </RelativeLayout>
+
+    <RelativeLayout
         android:id="@+id/search_bar_layout"
         android:layout_width="300dp"
         android:layout_height="30dp"
+        android:layout_marginTop="20dp"
+
 
         android:layout_centerHorizontal="true"
         android:gravity="center_vertical"
@@ -73,7 +90,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="100dp"
         android:layout_marginRight="15dp"
         android:orientation="vertical">
     <android.support.v7.widget.AppCompatButton
@@ -82,8 +99,28 @@
         android:layout_height="32dp"
         android:gravity="center"
         android:background="@drawable/start_trace"
-        android:text="@string/home_button"
+        android:text="@string/start_trace"
         android:textColor="@color/white"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="150dp"
+        android:layout_marginRight="15dp"
+        android:orientation="vertical">
+        <android.support.v7.widget.AppCompatButton
+            android:id="@+id/review"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:background="@drawable/review"
+            android:text="@string/review"
+            android:textColor="@color/white"
+            android:visibility="invisible"/>
+
 
     </LinearLayout>
 
