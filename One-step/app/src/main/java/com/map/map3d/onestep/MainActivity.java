@@ -58,10 +58,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private PoiResult poiResult; // poi返回的结果
     private int currentPage = 0;// 当前页面，从0开始计数
     private PoiSearch.Query query;// Poi查询条件类
-    private LatLonPoint lp = new LatLonPoint(20.993743, 116.472995);//
     private Marker locationMarker; // 选择的点
     private Marker detailMarker;
     private Marker mlastMarker;
+    private LatLonPoint search_point;
     private PoiSearch poiSearch;
     private myPoiOverlay poiOverlay;// poi图层
     private List<PoiItem> poiItems;// poi数据
@@ -94,14 +94,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.home_activity);
-        /*
-         * 设置离线地图存储目录，在下载离线地图或初始化地图设置;
-         * 使用过程中可自行设置, 若自行设置了离线地图存储的路径，
-         * 则需要在离线地图下载和使用地图页面都进行路径设置
-         * */
-        //Demo中为了其他界面可以使用下载的离线地图，使用默认位置存储，屏蔽了自定义设置
-        //  MapsInitializer.sdcardDir =OffLineMapUtils.getSdCacheDir(this);
-
 
         mapView = (MapView) findViewById(R.id.map);
         mapView.onCreate(savedInstanceState);// 此方法必须重写
@@ -131,12 +123,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             TextView searchButton = (TextView) findViewById(R.id.btn_search);
             searchButton.setOnClickListener(this);
-            locationMarker = aMap.addMarker(new MarkerOptions()
-                    .anchor(0.5f, 0.5f)//anchor表示锚点的显示比例，默认是（0.5f，1.0f），指的是水平居中，垂直下对齐
-                    .icon(BitmapDescriptorFactory
-                            .fromBitmap(BitmapFactory.decodeResource(getResources(), R.mipmap.point4)))
-                    .position(new LatLng(lp.getLatitude(), lp.getLongitude())));
-            locationMarker.showInfoWindow();
+
 
 
 
@@ -227,13 +214,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         query.setPageSize(20);// 设置每页最多返回多少条poiitem
         query.setPageNum(currentPage);// 设置查第一页
 
-        if (lp != null) {
+        search_point = new LatLonPoint(mLocationLatitude,mLocationLongitude);
+
+
             poiSearch = new PoiSearch(this, query);
             poiSearch.setOnPoiSearchListener(this);
-            poiSearch.setBound(new SearchBound(lp, 5000, true));//
-            // 设置搜索区域为以lp点为圆心，其周围5000米范围
+            poiSearch.setBound(new SearchBound(search_point, 5000, true));//
+            // 设置搜索区域为以当前点为圆心，其周围5000米范围
             poiSearch.searchPOIAsyn();// 异步搜索
-        }
     }
 
 
@@ -318,11 +306,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 .icon(BitmapDescriptorFactory
                                         .fromBitmap(BitmapFactory.decodeResource(
                                                 getResources(), R.mipmap.point4)))
-                                .position(new LatLng(lp.getLatitude(), lp.getLongitude())));
+                                .position(new LatLng(mLocationLatitude, mLocationLongitude)));
 
                         aMap.addCircle(new CircleOptions()
-                                .center(new LatLng(lp.getLatitude(),
-                                        lp.getLongitude())).radius(5000)
+                                .center(new LatLng(mLocationLatitude,
+                                        mLocationLongitude)).radius(5000)
                                 .strokeColor(Color.BLUE)
                                 .fillColor(Color.argb(50, 1, 1, 1))
                                 .strokeWidth(2));
