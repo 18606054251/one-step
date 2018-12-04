@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Test</string>
+    <string name="start_trace">开始记录</string>
+    <string name="end_trace">结束记录</string>
+    <string name="review">写评论</string>
+
+    <string name="no_result">对不起，没有搜索到相关数据！</string>
+
+    <string name="share_title">标题:</string>
+</resources>
